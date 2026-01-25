@@ -1,20 +1,58 @@
-const qInput = document.getElementById("questionSelector");
-const aInput = document.getElementById("answersSelector");
+const questionSelectorInput = document.getElementById("questionSelector");
+const answersSelectorInput = document.getElementById("answersSelector");
 const getBtn = document.getElementById("get");
 const analyzeBtn = document.getElementById("analyze");
+const pickQuestionBtn = document.getElementById("pickQuestion");
+const pickAnswersBtn = document.getElementById("pickAnswers");
 
 async function getActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
 }
 
+pickQuestionBtn.onclick = async () => {
+  const activeTab = await getActiveTab();
+  tabId = activeTab.id;
+  chrome.runtime.sendMessage({
+    type: "PICK_START",
+    tabId,
+    payload: { target: "question" }
+  });
+};
+
+pickAnswersBtn.onclick = async () => {
+  const activeTab = await getActiveTab();
+  tabId = activeTab.id;
+  chrome.runtime.sendMessage({
+    type: "PICK_START",
+    tabId,
+    payload: { target: "answers" }
+  });
+};
+
+chrome.runtime.onMessage.addListener(msg => {
+  if (msg.type === "PICK_RESULT") {
+    if (msg.payload.target === "question") {
+      questionSelectorInput.value = msg.payload.selector;
+    }
+    if (msg.payload.target === "answers") {
+      answersSelectorInput.value = msg.payload.selector;
+    }
+  }
+});
+
 getBtn.onclick = async () => {
   const activeTab = await getActiveTab();
+  tabId = activeTab.id;
   const selectors = {
-    questionSelector: qInput.value.trim(),
-    answersSelector: aInput.value.trim()
+    questionSelector: questionSelectorInput.value.trim(),
+    answersSelector: answersSelectorInput.value.trim()
   };
-  await chrome.runtime.sendMessage({ type: "ASSISTANT_GET", tabId: activeTab.id, payload: selectors});
+  await chrome.runtime.sendMessage({
+    type: "ASSISTANT_GET",
+    tabId,
+    payload: selectors
+  });
 };
 
 analyzeBtn.onclick = () => {

@@ -13,10 +13,14 @@ function onError(error) {
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === "PICK_START") {
+    chrome.tabs.sendMessage(msg.tabId, msg);
+  }
+
   if (msg.type === "ASSISTANT_GET") {
     chrome.tabs.sendMessage(
       msg.tabId,
-      { type: "ASSISTANT_GET", payload: msg.payload }
+      msg
     ).then((response) => {
       storedQuestion = response;
       recommendation = null;
