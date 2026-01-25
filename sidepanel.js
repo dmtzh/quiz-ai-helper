@@ -1,34 +1,52 @@
-const startBtn = document.getElementById("start");
-const stopBtn = document.getElementById("stop");
+const qInput = document.getElementById("questionSelector");
+const aInput = document.getElementById("answersSelector");
+const getBtn = document.getElementById("get");
+const analyzeBtn = document.getElementById("analyze");
 
-startBtn.onclick = () => {
-  chrome.runtime.sendMessage({ type: "ASSISTANT_START" });
-  startBtn.disabled = true;
-  stopBtn.disabled = false;
+async function getActiveTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tab;
+}
+
+getBtn.onclick = async () => {
+  const activeTab = await getActiveTab();
+  const selectors = {
+    questionSelector: qInput.value.trim(),
+    answersSelector: aInput.value.trim()
+  };
+  await chrome.runtime.sendMessage({ type: "ASSISTANT_GET", tabId: activeTab.id, payload: selectors});
 };
 
-stopBtn.onclick = () => {
-  chrome.runtime.sendMessage({ type: "ASSISTANT_STOP" });
-  startBtn.disabled = false;
-  stopBtn.disabled = true;
+analyzeBtn.onclick = () => {
+  chrome.runtime.sendMessage({ type: "ASSISTANT_ANALYZE" });
 };
-
-window.addEventListener("beforeunload", () => {
-  chrome.runtime.sendMessage({ type: "ASSISTANT_STOP" });
-  startBtn.disabled = false;
-  stopBtn.disabled = true;
-});
-
-const content = document.getElementById("content");
 
 chrome.runtime.onMessage.addListener(msg => {
-  if (msg.type === "RECOMMENDATION_READY") {
-    render(msg.payload);
+  if (msg.type === "ASSISTANT_SOURCE_DATA") {
+    renderQuestion(msg.payload);
+    analyzeBtn.disabled = false;
+  }
+
+  if (msg.type === "ASSISTANT_RECOMMENDATION_READY") {
+    renderRecommendation(msg.payload);
+  }
+
+  if (msg.type === "ERROR") {
+    alert(msg.payload);
   }
 });
 
-function render({ answerIndex, confidence, reasoning, sources }) {
-  content.innerHTML = `
+function renderQuestion({ question, answers }) {
+  document.getElementById("question").innerText = question;
+
+  document.getElementById("answers").innerHTML =
+    answers.map((a, i) => `<div>${i + 1}. ${a.text}</div>`).join("");
+}
+
+const result = document.getElementById("result");
+
+function renderRecommendation({ answerIndex, confidence, reasoning, sources }) {
+  result.innerHTML = `
     <div class="answer">
       ✅ Ответ: <b>${answerIndex + 1}</b>
     </div>

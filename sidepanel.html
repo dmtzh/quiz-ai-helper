@@ -5,13 +5,33 @@
   <!-- <link rel="stylesheet" href="sidepanel.css" /> -->
 </head>
 <body>
-  <button id="start">▶ Start</button>
-  <button id="stop" disabled>⏹ Stop</button>
+  <div class="selectors">
+    <div>
+      <label>
+        Question selector
+        <input id="questionSelector" placeholder=".question, h1, [data-question]" value=".t" />
+      </label>
+    </div>
+    <div>
+      <label>
+        Answers selector&nbsp;
+        <input id="answersSelector" placeholder=".answer li, button, label" value=".opt" />
+      </label>
+    </div>
+  </div>
 
+  <p></p>
+
+  <button id="get">Get</button>
+  <button id="analyze" disabled>🧠 Analyze</button>
+  
   <div id="app">
     <h3>Рекомендация</h3>
-    <div id="content">Ожидание вопроса…</div>
+    <div id="result">Ожидание вопроса…</div>
   </div>
+  <p></p>
+  <div id="question"></div>
+  <div id="answers"></div>
 
   <script src="sidepanel.js"></script>
 </body>

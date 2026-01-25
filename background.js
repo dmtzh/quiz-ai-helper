@@ -5,30 +5,42 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (msg.type === "ASSISTANT_START" || msg.type === "ASSISTANT_STOP") {
-    chrome.tabs.query({}, tabs => {
-      tabs.forEach(async tab => {
-        try {
-          await chrome.tabs.sendMessage(tab.id, msg);
-        } catch(err) {}
-      });
-    });
-  }
-});
-
-let currentQuestion = null;
+let storedQuestion = null;
 let recommendation = null;
 
-chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (msg.type === "QUESTION_UPDATE") {
-    if (JSON.stringify(msg.payload) !== JSON.stringify(currentQuestion)) {
-      console.log("question changed");
-      currentQuestion = msg.payload;
-      analyze(currentQuestion);
+function onError(error) {
+  console.error(`Error: ${error}`);
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === "ASSISTANT_GET") {
+    chrome.tabs.sendMessage(
+      msg.tabId,
+      { type: "ASSISTANT_GET", payload: msg.payload }
+    ).then((response) => {
+      storedQuestion = response;
+      recommendation = null;
+
+      chrome.runtime.sendMessage({
+        type: "ASSISTANT_SOURCE_DATA",
+        payload: storedQuestion
+      });
+    }).catch(onError);
+  }
+
+  if (msg.type === "ASSISTANT_ANALYZE") {
+    if (!storedQuestion) {
+      chrome.runtime.sendMessage({
+        type: "ERROR",
+        payload: "No question saved"
+      });
+      return;
     }
+
+    analyze(storedQuestion);
   }
 });
+
 
 async function analyze({ question, answers }) {
   // TODO: web search + LLM
@@ -43,20 +55,7 @@ async function analyze({ question, answers }) {
   };
 
   chrome.runtime.sendMessage({
-    type: "RECOMMENDATION_READY",
+    type: "ASSISTANT_RECOMMENDATION_READY",
     payload: recommendation
   });
 }
-
-// chrome.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
-//   if (msg.type === 'ANALYZE') {
-//     const { question, answers } = msg.payload;
-
-//     // TODO: web search + LLM
-//     sendResponse({
-//       recommended: 2,
-//       confidence: 0.74,
-//       explanation: "Placeholder explanation"
-//     });
-//   }
-// });

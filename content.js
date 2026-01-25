@@ -24,18 +24,18 @@ function findVisibleQuestion(selector) {
   return null;
 }
 
-function readQuestion() {
-  const questionEl = findVisibleQuestion(".t");
-  if (!questionEl) return null;
+function readQuestion({questionSelector, answersSelector}) {
+  const questionEl = findVisibleQuestion(questionSelector);
+  if (!questionEl) return {question: "", answers: []};
 
   const question = questionEl.innerText.trim();
 
   const answerEls = [...questionEl
-    .closest(".q, form, body")
-    .querySelectorAll(".opt")]
+    .closest("form, body")
+    .querySelectorAll(answersSelector)]
     .filter(isVisible);
 
-  if (!answerEls.length) return null;
+  if (!answerEls.length) return {question, answers: []};
 
   const answers = answerEls.map((el, index) => ({
       index,
@@ -45,49 +45,10 @@ function readQuestion() {
   return { question, answers };
 }
 
-let timerId = null;
-
-chrome.runtime.onMessage.addListener(msg => {
-  if (msg.type === "ASSISTANT_START") {
-    startInterval();
-  }
-
-  if (msg.type === "ASSISTANT_STOP") {
-    stopInterval();
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === "ASSISTANT_GET") {
+    const data = readQuestion(msg.payload);
+    sendResponse(data);
+    return true;
   }
 });
-
-function startInterval() {
-  if (timerId !== null) {
-    console.log("Content: interval already running");
-    return;
-  }
-
-  console.log("Content: starting interval");
-
-  timerId = setInterval(() => {
-    const payload = readQuestion();
-    if (!payload) return;
-
-    try {
-      chrome.runtime.sendMessage({
-        type: "QUESTION_UPDATE",
-        payload: payload
-      });
-    } catch (err) {
-      stopInterval()
-    }
-  }, 5000);
-}
-
-function stopInterval() {
-  if (timerId === null) {
-    console.log("Content: interval already stopped");
-    return;
-  }
-
-  console.log("Content: stopping interval");
-
-  clearInterval(timerId);
-  timerId = null;
-}
