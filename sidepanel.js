@@ -34,12 +34,64 @@ chrome.runtime.onMessage.addListener(msg => {
   if (msg.type === "PICK_RESULT") {
     if (msg.payload.target === "question") {
       questionSelectorInput.value = msg.payload.selector;
+      renderQuestionStatus(msg.payload.count);
     }
     if (msg.payload.target === "answers") {
       answersSelectorInput.value = msg.payload.selector;
+      renderAnswersStatus(msg.payload.count);
     }
   }
 });
+
+function renderQuestionStatus(count) {
+  const statusEl = document.getElementById("questionStatus");
+
+  if (count === -1) {
+    statusEl.textContent = "❌ Invalid question selector";
+    statusEl.className = "error";
+    return;
+  }
+
+  if (count === 0) {
+    statusEl.textContent = "❌ No question found";
+    statusEl.className = "error";
+    return;
+  }
+
+  if (count === 1) {
+    statusEl.textContent = "✅ Found 1 question";
+    statusEl.className = "ok";
+    return;
+  }
+
+  statusEl.textContent = `⚠ Found ${count} questions`;
+  statusEl.className = "warn";
+}
+
+function renderAnswersStatus(count) {
+  const statusEl = document.getElementById("answersStatus");
+
+  if (count === -1) {
+    statusEl.textContent = "❌ Invalid answers selector";
+    statusEl.className = "error";
+    return;
+  }
+
+  if (count === 0) {
+    statusEl.textContent = "❌ No elements found";
+    statusEl.className = "error";
+    return;
+  }
+
+  if (count === 1) {
+    statusEl.textContent = "⚠ Found 1 element";
+    statusEl.className = "warn";
+    return;
+  }
+
+  statusEl.textContent = `✅ Found ${count} answers`;
+  statusEl.className = "ok";
+}
 
 getBtn.onclick = async () => {
   const activeTab = await getActiveTab();

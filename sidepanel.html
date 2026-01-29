@@ -2,23 +2,25 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <!-- <link rel="stylesheet" href="sidepanel.css" /> -->
+  <link rel="stylesheet" href="sidepanel.css" />
 </head>
 <body>
   <div class="selectors">
     <div>
       <label>
         Question selector
-        <input id="questionSelector" placeholder=".question, h1, [data-question]" value=".t" />
+        <input id="questionSelector" placeholder=".question, h1, [data-question]" />
         <button id="pickQuestion">Pick</button>
       </label>
+      <div id="questionStatus"></div>
     </div>
     <div>
       <label>
         Answers selector&nbsp;
-        <input id="answersSelector" placeholder=".answer li, button, label" value=".opt" />
+        <input id="answersSelector" placeholder=".answer li, button, label" />
         <button id="pickAnswers">Pick</button>
       </label>
+      <div id="answersStatus"></div>
     </div>
   </div>
 

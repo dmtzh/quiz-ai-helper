@@ -30,9 +30,7 @@ function readQuestion({questionSelector, answersSelector}) {
 
   const question = questionEl.innerText.trim();
 
-  const answerEls = [...questionEl
-    .closest("form, body")
-    .querySelectorAll(answersSelector)]
+  const answerEls = [...document.querySelectorAll(answersSelector)]
     .filter(isVisible);
 
   if (!answerEls.length) return {question, answers: []};
@@ -87,14 +85,21 @@ function onClick(e) {
   e.preventDefault();
   e.stopPropagation();
 
-  const selector = buildSelector(e.target);
+  let payload = {target: pickTarget};
+  if (pickTarget === "answers") {
+    payload.selector = buildAnswersSelector(e.target);
+  } else {
+    payload.selector = buildSelector(e.target);
+  }
+  try {
+    payload.count = [...document.querySelectorAll(payload.selector)].filter(isVisible).length;
+  } catch {
+    payload.count = -1;
+  }
 
   chrome.runtime.sendMessage({
     type: "PICK_RESULT",
-    payload: {
-      target: pickTarget,
-      selector
-    }
+    payload
   });
 
   disablePickMode();
@@ -111,12 +116,11 @@ function buildSelector(el) {
 
   const parts = [];
 
-  while (el && el.nodeType === 1 && parts.length < 4) {
+  while (el && el.nodeType === 1 && parts.length < 3) {
     let part = el.tagName.toLowerCase();
 
-    if (el.className) {
-      const cls = el.className.split(" ")[0];
-      if (cls) part += "." + cls;
+    if (el.classList.length) {
+      part += "." + el.classList[0];
     }
 
     parts.unshift(part);
@@ -124,4 +128,38 @@ function buildSelector(el) {
   }
 
   return parts.join(" > ");
+}
+
+function commonClass(nodes) {
+  const classLists = nodes.map(n => [...n.classList]);
+
+  return classLists[0].find(cls =>
+    classLists.every(list => list.includes(cls))
+  );
+}
+
+function buildAnswersSelector(el) {
+  let parent = el.parentElement;
+
+  while (parent && parent !== document.body) {
+    const siblings = [...parent.children].filter(
+      n => n.tagName === el.tagName
+    );
+
+    if (siblings.length >= 2) {
+      // 1️⃣ общий class
+      const cls = commonClass(siblings);
+      if (cls) {
+        return `${buildSelector(parent)} > ${el.tagName.toLowerCase()}.${cls}`;
+      }
+
+      // 2️⃣ только tag
+      return `${buildSelector(parent)} > ${el.tagName.toLowerCase()}`;
+    }
+
+    parent = parent.parentElement;
+  }
+
+  // fallback
+  return buildSelector(el);
 }
