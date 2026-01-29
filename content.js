@@ -138,7 +138,63 @@ function commonClass(nodes) {
   );
 }
 
-function buildAnswersSelector(el) {
+function normalizeAnswerTarget(el) {
+  // 1️⃣ сам input
+  if (el.matches('input[type=radio], input[type=checkbox]')) {
+    return el;
+  }
+
+  // 2️⃣ input внутри
+  const input = el.querySelector?.(
+    'input[type=radio], input[type=checkbox]'
+  );
+  if (input) return input;
+
+  // 3️⃣ input выше
+  return el.closest('label, div')?.querySelector(
+    'input[type=radio], input[type=checkbox]'
+  );
+}
+
+function buildAnswersSelector(clickedEl) {
+  const inputEl = normalizeAnswerTarget(clickedEl);
+
+  if (inputEl) {
+    return buildInputGroupSelector(inputEl);
+  }
+
+  // fallback — обычная логика (li / div / label)
+  return buildGenericAnswersSelector(clickedEl);
+}
+
+function buildInputGroupSelector(input) {
+  const type = input.type;
+
+  // 1️⃣ по name
+  if (input.name) {
+    return `input[type=${type}][name="${input.name}"]`;
+  }
+
+  // 2️⃣ общий parent
+  let parent = input.parentElement;
+
+  while (parent && parent !== document.body) {
+    const inputs = parent.querySelectorAll(
+      `input[type=${type}]`
+    );
+
+    if (inputs.length >= 2) {
+      return `${buildSelector(parent)} input[type=${type}]`;
+    }
+
+    parent = parent.parentElement;
+  }
+
+  // 3️⃣ fallback
+  return `input[type=${type}]`;
+}
+
+function buildGenericAnswersSelector(el) {
   let parent = el.parentElement;
 
   while (parent && parent !== document.body) {
