@@ -14,6 +14,52 @@ function isVisible(el) {
   return true;
 }
 
+function getTextsBySelector(selector) {
+  let nodes;
+
+  try {
+    nodes = document.querySelectorAll(selector);
+  } catch {
+    return [];
+  }
+
+  return [...nodes]
+    .map(el => extractText(el))
+    .filter(Boolean);
+}
+
+function extractText(el) {
+  // radio / checkbox → label
+  if (el.matches('input[type=radio], input[type=checkbox]')) {
+    const label =
+      el.closest('label') ||
+      document.querySelector(`label[for="${el.id}"]`);
+
+    return normalizeText(label?.innerText);
+  }
+
+  return normalizeText(el.innerText || el.textContent);
+}
+
+function normalizeText(text) {
+  if (!text) return "";
+
+  return escapeHtml(
+    text
+      .replace(/\s+/g, " ")
+      .replace(/\u00A0/g, " ")
+      .trim()
+  );
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+
 function findVisibleQuestion(selector) {
   const elements = document.querySelectorAll(selector);
 
@@ -30,14 +76,9 @@ function readQuestion({questionSelector, answersSelector}) {
 
   const question = questionEl.innerText.trim();
 
-  const answerEls = [...document.querySelectorAll(answersSelector)]
-    .filter(isVisible);
-
-  if (!answerEls.length) return {question, answers: []};
-
-  const answers = answerEls.map((el, index) => ({
+  const answers = getTextsBySelector(answersSelector).map((text, index) => ({
       index,
-      text: el.innerText.trim()
+      text
     }));
 
   return { question, answers };
@@ -91,12 +132,8 @@ function onClick(e) {
   } else {
     payload.selector = buildSelector(e.target);
   }
-  try {
-    payload.count = [...document.querySelectorAll(payload.selector)].filter(isVisible).length;
-  } catch {
-    payload.count = -1;
-  }
-
+  payload.count = getTextsBySelector(payload.selector).length;
+  
   chrome.runtime.sendMessage({
     type: "PICK_RESULT",
     payload
