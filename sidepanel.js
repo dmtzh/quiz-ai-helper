@@ -35,10 +35,12 @@ chrome.runtime.onMessage.addListener(msg => {
     if (msg.payload.target === "question") {
       questionSelectorInput.value = msg.payload.selector;
       renderQuestionStatus(msg.payload.count);
+      renderQuestionField(msg.payload.question);
     }
     if (msg.payload.target === "answers") {
       answersSelectorInput.value = msg.payload.selector;
       renderAnswersStatus(msg.payload.count);
+      renderAnswersFields(msg.payload.answers);
     }
   }
 });
@@ -114,7 +116,6 @@ analyzeBtn.onclick = () => {
 chrome.runtime.onMessage.addListener(msg => {
   if (msg.type === "ASSISTANT_SOURCE_DATA") {
     renderQuestion(msg.payload);
-    analyzeBtn.disabled = false;
   }
 
   if (msg.type === "ASSISTANT_RECOMMENDATION_READY") {
@@ -127,10 +128,71 @@ chrome.runtime.onMessage.addListener(msg => {
 });
 
 function renderQuestion({ question, answers }) {
-  document.getElementById("question").innerText = question;
+  renderQuestionField(question);
+  renderAnswersFields(answers);
+}
 
-  document.getElementById("answers").innerHTML =
-    answers.map((a, i) => `<div>${i + 1}. ${a.text}</div>`).join("");
+function renderQuestionField(question) {
+  const container = document.getElementById("question");
+  container.innerHTML = "";
+
+  const textarea = document.createElement("textarea");
+  textarea.value = question || "";
+  textarea.rows = 4;
+  textarea.style.width = "100%";
+  textarea.placeholder = "Question";
+
+  textarea.addEventListener("input", updateAnalyzeButtonState);
+
+  container.appendChild(textarea);
+
+  updateAnalyzeButtonState();
+}
+
+
+function renderAnswersFields(answers) {
+  const container = document.getElementById("answers");
+  container.innerHTML = "";
+
+  answers.forEach((a, i) => {
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "6px";
+
+    const index = document.createElement("span");
+    index.textContent = `${i + 1}.`;
+    index.style.minWidth = "20px";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = a || "";
+    input.placeholder = `Answer ${i + 1}`;
+    input.style.width = "100%";
+
+    input.addEventListener("input", updateAnalyzeButtonState);
+
+    wrapper.appendChild(index);
+    wrapper.appendChild(input);
+    container.appendChild(wrapper);
+  });
+
+  updateAnalyzeButtonState();
+}
+
+
+function updateAnalyzeButtonState() {
+  const questionTextarea = document.querySelector("#question textarea");
+  const answerInputs = document.querySelectorAll("#answers input");
+
+  const questionFilled =
+    questionTextarea && questionTextarea.value.trim().length > 0;
+
+  const allAnswersFilled =
+    answerInputs.length > 0 &&
+    Array.from(answerInputs).every(i => i.value.trim().length > 0);
+
+  analyzeBtn.disabled = !(questionFilled && allAnswersFilled);
 }
 
 const result = document.getElementById("result");

@@ -1,19 +1,3 @@
-function isVisible(el) {
-  if (!el) return false;
-
-  const style = getComputedStyle(el);
-  if (
-    style.display === "none" ||
-    style.visibility === "hidden" ||
-    style.opacity === "0"
-  ) return false;
-
-  const rect = el.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0) return false;
-
-  return true;
-}
-
 function getTextsBySelector(selector) {
   let nodes;
 
@@ -60,27 +44,9 @@ function escapeHtml(text) {
 }
 
 
-function findVisibleQuestion(selector) {
-  const elements = document.querySelectorAll(selector);
-
-  for (const el of elements) {
-    if (isVisible(el)) return el;
-  }
-
-  return null;
-}
-
 function readQuestion({questionSelector, answersSelector}) {
-  const questionEl = findVisibleQuestion(questionSelector);
-  if (!questionEl) return {question: "", answers: []};
-
-  const question = questionEl.innerText.trim();
-
-  const answers = getTextsBySelector(answersSelector).map((text, index) => ({
-      index,
-      text
-    }));
-
+  const question = getTextsBySelector(questionSelector);
+  const answers = getTextsBySelector(answersSelector);
   return { question, answers };
 }
 
@@ -129,10 +95,13 @@ function onClick(e) {
   let payload = {target: pickTarget};
   if (pickTarget === "answers") {
     payload.selector = buildAnswersSelector(e.target);
+    payload.answers = getTextsBySelector(payload.selector);
+    payload.count = payload.answers.length;
   } else {
     payload.selector = buildSelector(e.target);
+    payload.question = getTextsBySelector(payload.selector);
+    payload.count = payload.question.length;
   }
-  payload.count = getTextsBySelector(payload.selector).length;
   
   chrome.runtime.sendMessage({
     type: "PICK_RESULT",
