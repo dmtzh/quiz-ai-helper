@@ -119,7 +119,7 @@ function collectQuestionData() {
     : "";
 
   const answers = Array.from(answerInputs).map((input, i) => ({
-    key: String(i + 1),
+    key: i + 1,
     text: input.value.trim()
   }));
 

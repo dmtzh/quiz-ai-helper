@@ -1,3 +1,5 @@
+import { analyzeQuestion } from "./core/analyzeQuestion.js";
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setOptions({
     enabled: true,
@@ -35,17 +37,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
-
 async function analyze({question, answers}) {
-  const recommendation = {
-    recommended: 3,
-    confidence: 0.1,
-    explanation: "Соответствует формулировке вопроса. Остальные варианты противоречат контексту"
-  };
-  
-  // TODO: web search + LLM
-  chrome.runtime.sendMessage({
-    type: "ASSISTANT_RECOMMENDATION_READY",
-    payload: recommendation
-  });
+  try {
+    const recommendation = await analyzeQuestion(question, answers);
+    // TODO: web search + LLM
+    chrome.runtime.sendMessage({
+      type: "ASSISTANT_RECOMMENDATION_READY",
+      payload: recommendation
+    });
+  } catch (err) {
+    console.error("Analyzer error:", err);
+  }
+  // const recommendation = {
+  //   recommended: 3,
+  //   confidence: 0.1,
+  //   explanation: "Соответствует формулировке вопроса. Остальные варианты противоречат контексту"
+  // };
 }
