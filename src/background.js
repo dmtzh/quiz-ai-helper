@@ -1,4 +1,5 @@
 import { analyzeQuestion } from "./core/analyzeQuestion.js";
+import { askLLM } from "./llm/llmClient.js";
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setOptions({
@@ -37,20 +38,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
-async function analyze({question, answers}) {
+async function analyze({llmApiUrl, llmApiKey, llmModel, question, answers}) {
   try {
-    const recommendation = await analyzeQuestion(question, answers);
-    // TODO: web search + LLM
+    const recommendation = await askLLM(llmApiUrl, llmApiKey, llmModel, question, answers);
+    // const recommendation = await analyzeQuestion(question, answers);
     chrome.runtime.sendMessage({
       type: "ASSISTANT_RECOMMENDATION_READY",
       payload: recommendation
     });
   } catch (err) {
-    console.error("Analyzer error:", err);
+    console.log(err);
+    chrome.runtime.sendMessage({
+      type: "ASSISTANT_RECOMMENDATION_ERROR",
+      payload: err.toString()
+    });
   }
-  // const recommendation = {
-  //   recommended: 3,
-  //   confidence: 0.1,
-  //   explanation: "Соответствует формулировке вопроса. Остальные варианты противоречат контексту"
-  // };
 }

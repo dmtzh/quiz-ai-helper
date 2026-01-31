@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Video Helper",
+  "name": "Quiz Helper",
   "version": "0.1",
   "permissions": [
     "sidePanel",

@@ -125,22 +125,30 @@ function collectQuestionData() {
 
   return { question, answers };
 }
+function collectLLMData() {
+  const llmApiUrl = document.getElementById("llmApiUrl").value.trim();
+  const llmApiKey = document.getElementById("llmApiKey").value.trim();
+  const llmModel = document.getElementById("llmModel").value.trim();
+  return {llmApiUrl, llmApiKey, llmModel};
+}
 analyzeBtn.onclick = () => {
-  payload = collectQuestionData();
+  
+  const llmData = collectLLMData();
+  questionData = collectQuestionData();
+  payload = {...llmData, ...questionData};
   chrome.runtime.sendMessage({ type: "ASSISTANT_ANALYZE", payload });
+  document.getElementById("recommendation").innerHTML = "<div>Analyzing. Please wait...</div>"
 };
 
 chrome.runtime.onMessage.addListener(msg => {
   if (msg.type === "ASSISTANT_SOURCE_DATA") {
     renderQuestion(msg.payload);
   }
-
   if (msg.type === "ASSISTANT_RECOMMENDATION_READY") {
     renderRecommendation(msg.payload);
   }
-
-  if (msg.type === "ERROR") {
-    alert(msg.payload);
+  if (msg.type === "ASSISTANT_RECOMMENDATION_ERROR") {
+    renderRecommendationError(msg.payload);
   }
 });
 
@@ -212,21 +220,49 @@ function updateAnalyzeButtonState() {
   analyzeBtn.disabled = !(questionFilled && allAnswersFilled);
 }
 
-function renderRecommendation({recommended, confidence, explanation}) {
+function valueToString(value, nestedLevel = 0) {
+  const indent = "&nbsp;".repeat(nestedLevel);
+  const childNestedLevel = nestedLevel + 1;
+  switch (Object.prototype.toString.call(value)) {
+    case "[object Object]":
+      return `{<br/>${Object.entries(value).map(([key, value]) => `${indent}&nbsp;${key}: ${valueToString(value, childNestedLevel)}`).join(",<br/>")}<br/>${indent}}`;
+    case "[object Array]":
+      return `[<br/>${value.map(val => `${indent}&nbsp;${valueToString(val, childNestedLevel)}`).join(",<br/>")}<br/>${indent}]`;
+    case "[object String]":
+      return `"${value}"`;
+    default:
+      return String(value);
+  }
+}
+
+function renderRecommendation(recommendation) {
+  const recommendationElt = document.getElementById("recommendation");
+  recommendationElt.innerHTML = `
+    <div>${valueToString(recommendation)}</div>
+  `;
+}
+// function renderRecommendation({recommended, confidence, explanation}) {
+//   const recommendation = document.getElementById("recommendation");
+//   recommendation.innerHTML = `
+//     <div class="answer">
+//       ✅ Ответ: <b>${recommended}</b>
+//     </div>
+
+//     <div class="confidence">
+//       Уверенность: ${(confidence * 100).toFixed(0)}%
+//       <div class="bar">
+//         <span style="width:${confidence * 100}%"></span>
+//       </div>
+//     </div>
+
+//     <summary>Почему?</summary>
+//     <div>${explanation}</div>
+//   `;
+// }
+function renderRecommendationError(error) {
   const recommendation = document.getElementById("recommendation");
   recommendation.innerHTML = `
-    <div class="answer">
-      ✅ Ответ: <b>${recommended}</b>
-    </div>
-
-    <div class="confidence">
-      Уверенность: ${(confidence * 100).toFixed(0)}%
-      <div class="bar">
-        <span style="width:${confidence * 100}%"></span>
-      </div>
-    </div>
-
-    <summary>Почему?</summary>
-    <div>${explanation}</div>
+    <div>Упс, произошла ошибка</div>
+    <div>${JSON.stringify(error)}</div>
   `;
 }

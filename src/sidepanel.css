@@ -1,3 +1,23 @@
+#llms {
+  padding: 10px 0;
+}
+#llms ul {
+  list-style-type: none;
+  padding: 5px;
+  margin: 0;
+}
+#llms ul li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 3px;
+}
+#llms ul li span {
+  min-width: 50px;
+}
+#llms ul li input {
+  width: 100%;
+}
+
 #answersStatus {
   font-size: 12px;
   margin-top: 4px;

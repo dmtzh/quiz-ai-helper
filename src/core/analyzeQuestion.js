@@ -5,7 +5,7 @@ export async function analyzeQuestion(question, answers) {
     throw new Error("Invalid input data");
   }
 
-  const result = await askLLM({ question, answers });
+  const result = await askLLM(question, answers);
 
   // минимальная валидация
   if (!result.recommended || !result.scores) {
