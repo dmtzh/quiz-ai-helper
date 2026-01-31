@@ -5,3 +5,10 @@
 .ok { color: green; }
 .warn { color: orange; }
 .error { color: red; }
+
+h3 {
+  margin-bottom: 5px;
+}
+#recommendation {
+  margin-bottom: 10px;
+}

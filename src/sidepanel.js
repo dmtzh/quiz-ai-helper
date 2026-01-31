@@ -109,8 +109,25 @@ getBtn.onclick = async () => {
   });
 };
 
+
+function collectQuestionData() {
+  const questionTextarea = document.querySelector("#question textarea");
+  const answerInputs = document.querySelectorAll("#answers input");
+
+  const question = questionTextarea
+    ? questionTextarea.value.trim()
+    : "";
+
+  const answers = Array.from(answerInputs).map((input, i) => ({
+    key: String(i + 1),
+    text: input.value.trim()
+  }));
+
+  return { question, answers };
+}
 analyzeBtn.onclick = () => {
-  chrome.runtime.sendMessage({ type: "ASSISTANT_ANALYZE" });
+  payload = collectQuestionData();
+  chrome.runtime.sendMessage({ type: "ASSISTANT_ANALYZE", payload });
 };
 
 chrome.runtime.onMessage.addListener(msg => {
@@ -195,12 +212,11 @@ function updateAnalyzeButtonState() {
   analyzeBtn.disabled = !(questionFilled && allAnswersFilled);
 }
 
-const result = document.getElementById("result");
-
-function renderRecommendation({ answerIndex, confidence, reasoning, sources }) {
-  result.innerHTML = `
+function renderRecommendation({recommended, confidence, explanation}) {
+  const recommendation = document.getElementById("recommendation");
+  recommendation.innerHTML = `
     <div class="answer">
-      ✅ Ответ: <b>${answerIndex + 1}</b>
+      ✅ Ответ: <b>${recommended}</b>
     </div>
 
     <div class="confidence">
@@ -210,14 +226,7 @@ function renderRecommendation({ answerIndex, confidence, reasoning, sources }) {
       </div>
     </div>
 
-    <details>
-      <summary>Почему?</summary>
-      <ul>${reasoning.map(r => `<li>${r}</li>`).join("")}</ul>
-    </details>
-
-    <details>
-      <summary>Источники</summary>
-      <ul>${sources.map(s => `<li>${s}</li>`).join("")}</ul>
-    </details>
+    <summary>Почему?</summary>
+    <div>${explanation}</div>
   `;
 }

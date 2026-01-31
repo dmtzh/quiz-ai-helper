@@ -5,7 +5,6 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-let storedQuestion = null;
 let recommendation = null;
 
 function onError(error) {
@@ -22,42 +21,29 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       msg.tabId,
       msg
     ).then((response) => {
-      storedQuestion = response;
       recommendation = null;
 
       chrome.runtime.sendMessage({
         type: "ASSISTANT_SOURCE_DATA",
-        payload: storedQuestion
+        payload: response
       });
     }).catch(onError);
   }
 
   if (msg.type === "ASSISTANT_ANALYZE") {
-    if (!storedQuestion) {
-      chrome.runtime.sendMessage({
-        type: "ERROR",
-        payload: "No question saved"
-      });
-      return;
-    }
-
-    analyze(storedQuestion);
+    analyze(msg.payload);
   }
 });
 
 
-async function analyze({ question, answers }) {
-  // TODO: web search + LLM
-  recommendation = {
-    answerIndex: 1,
-    confidence: 0.82,
-    reasoning: [
-      "Соответствует формулировке вопроса",
-      "Остальные варианты противоречат контексту"
-    ],
-    sources: ["wikipedia.org", "example.com"]
+async function analyze({question, answers}) {
+  const recommendation = {
+    recommended: 3,
+    confidence: 0.1,
+    explanation: "Соответствует формулировке вопроса. Остальные варианты противоречат контексту"
   };
-
+  
+  // TODO: web search + LLM
   chrome.runtime.sendMessage({
     type: "ASSISTANT_RECOMMENDATION_READY",
     payload: recommendation
