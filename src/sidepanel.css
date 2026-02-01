@@ -3,7 +3,7 @@
 }
 #llms ul {
   list-style-type: none;
-  padding: 5px;
+  padding: 5px 0 0 5px;
   margin: 0;
 }
 #llms ul li {
@@ -18,6 +18,17 @@
   width: 100%;
 }
 
+div.selectors > div > div {
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+}
+div.selectors > div span {
+  min-width: 100px;
+}
+div.selectors > div input {
+  width: 100%;
+}
 #answersStatus {
   font-size: 12px;
   margin-top: 4px;

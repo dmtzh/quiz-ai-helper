@@ -7,7 +7,7 @@
 <body>
   <div id="llms">
     <details open>
-      <summary>LLM</summary>
+      <summary>LLM configuration</summary>
       <ul>
         <li><span>Api Url</span><input id="llmApiUrl" type="text" placeholder="https://api.openai.com/v1/chat/completions" /></li>
         <li><span>Api Key</span><input id="llmApiKey" type="text" placeholder="sk-proj-..." /></li>
@@ -17,19 +17,19 @@
   </div>
   <div class="selectors">
     <div>
-      <label>
-        Question selector
+      <div>
+        <span>Question selector</span>
         <input id="questionSelector" placeholder=".question, h1, [data-question]" />
         <button id="pickQuestion">Pick</button>
-      </label>
+      </div>
       <div id="questionStatus"></div>
     </div>
     <div>
-      <label>
-        Answers selector&nbsp;
+      <div>
+        <span>Answers selector</span>
         <input id="answersSelector" placeholder=".answer li, button, label" />
         <button id="pickAnswers">Pick</button>
-      </label>
+      </div>
       <div id="answersStatus"></div>
     </div>
   </div>
