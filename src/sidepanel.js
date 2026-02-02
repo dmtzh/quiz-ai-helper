@@ -229,10 +229,16 @@ function valueToString(value, nestedLevel = 0) {
     case "[object Array]":
       return `[<br/>${value.map(val => `${indent}&nbsp;${valueToString(val, childNestedLevel)}`).join(",<br/>")}<br/>${indent}]`;
     case "[object String]":
-      return `"${value}"`;
+      return `"${htmlEncode(value)}"`;
     default:
       return String(value);
   }
+}
+
+function htmlEncode(str) {
+  var el = document.createElement("div");
+  el.innerText = str;
+  return el.innerHTML;
 }
 
 function renderRecommendation(recommendation) {
