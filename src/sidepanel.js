@@ -1,3 +1,4 @@
+const questionTextInput = document.getElementById("questionText");
 const questionSelectorInput = document.getElementById("questionSelector");
 const answersSelectorInput = document.getElementById("answersSelector");
 const getBtn = document.getElementById("get");
@@ -158,11 +159,13 @@ function renderQuestion({ question, answers }) {
 }
 
 function renderQuestionField(question) {
+  questionText = questionTextInput.value.trim();
   const container = document.getElementById("question");
   container.innerHTML = "";
 
   const textarea = document.createElement("textarea");
-  textarea.value = question || "";
+  questions = [questionText, ...question];
+  textarea.value = questions.filter(q => q != null && q.trim() != "").join(" ");
   textarea.rows = 4;
   textarea.style.width = "100%";
   textarea.placeholder = "Question";
