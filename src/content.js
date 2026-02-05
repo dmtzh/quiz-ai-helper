@@ -41,10 +41,10 @@ function escapeHtml(text) {
 }
 
 
-function readQuestion({questionSelector, answersSelector}) {
-  const question = getTextsBySelector(questionSelector);
+function readQuestion({ questionSelectors, answersSelector }) {
+  const questionParts = questionSelectors.map(({ questionNum, selector }) => {return { questionNum, questions: getTextsBySelector(selector) };});
   const answers = getTextsBySelector(answersSelector);
-  return { question, answers };
+  return { questionParts, answers };
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -55,12 +55,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 
   if (msg.type === "PICK_START") {
-    pickTarget = msg.payload.target;
+    pickInfo = msg.payload;
     enablePickMode();
   }
 });
 
-let pickTarget = null;
+let pickInfo = null;
 let lastHover = null;
 
 function enablePickMode() {
@@ -76,7 +76,7 @@ function disablePickMode() {
 
   if (lastHover) lastHover.style.outline = "";
   lastHover = null;
-  pickTarget = null;
+  pickInfo = null;
 }
 
 function onHover(e) {
@@ -89,15 +89,14 @@ function onClick(e) {
   e.preventDefault();
   e.stopPropagation();
 
-  let payload = {target: pickTarget};
-  if (pickTarget === "answers") {
+  let payload = pickInfo;
+  if (pickInfo.target === "answers") {
     payload.selector = buildAnswersSelector(e.target);
     payload.answers = getTextsBySelector(payload.selector);
     payload.count = payload.answers.length;
   } else {
     payload.selector = buildSelector(e.target);
-    payload.question = getTextsBySelector(payload.selector);
-    payload.count = payload.question.length;
+    payload.questions = getTextsBySelector(payload.selector);
   }
   
   chrome.runtime.sendMessage({

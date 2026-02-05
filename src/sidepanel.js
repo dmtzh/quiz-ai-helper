@@ -1,9 +1,7 @@
 const questionTextInput = document.getElementById("questionText");
-const questionSelectorInput = document.getElementById("questionSelector");
 const answersSelectorInput = document.getElementById("answersSelector");
 const getBtn = document.getElementById("get");
 const analyzeBtn = document.getElementById("analyze");
-const pickQuestionBtn = document.getElementById("pickQuestion");
 const pickAnswersBtn = document.getElementById("pickAnswers");
 
 async function getActiveTab() {
@@ -11,15 +9,20 @@ async function getActiveTab() {
   return tab;
 }
 
-pickQuestionBtn.onclick = async () => {
+questionTextInput.onchange = () => {
+  renderQuestionField([]);
+};
+
+pickQuestionBtns = document.querySelectorAll(".pick-question");
+pickQuestionBtns.forEach(btn => btn.onclick = async(e) => {
   const activeTab = await getActiveTab();
   tabId = activeTab.id;
   chrome.runtime.sendMessage({
     type: "PICK_START",
     tabId,
-    payload: { target: "question" }
+    payload: { target: "question", questionNum: Number(e.target.closest(".question-selector-area").dataset.questionNum) }
   });
-};
+});
 
 pickAnswersBtn.onclick = async () => {
   const activeTab = await getActiveTab();
@@ -34,9 +37,11 @@ pickAnswersBtn.onclick = async () => {
 chrome.runtime.onMessage.addListener(msg => {
   if (msg.type === "PICK_RESULT") {
     if (msg.payload.target === "question") {
+      const questionSelectorInput = document.querySelector(`.question-selector-area[data-question-num="${msg.payload.questionNum}"] .question-selector`);
       questionSelectorInput.value = msg.payload.selector;
-      renderQuestionStatus(msg.payload.count);
-      renderQuestionField(msg.payload.question);
+      renderQuestionStatus(msg.payload);
+      const newQuestionParts = [{ questionNum: msg.payload.questionNum, questions: msg.payload.questions }];
+      renderQuestionField(newQuestionParts);
     }
     if (msg.payload.target === "answers") {
       answersSelectorInput.value = msg.payload.selector;
@@ -46,61 +51,64 @@ chrome.runtime.onMessage.addListener(msg => {
   }
 });
 
-function renderQuestionStatus(count) {
-  const statusEl = document.getElementById("questionStatus");
+function renderQuestionStatus(questionPart) {
+  const statusElt = document.querySelector(`.question-selector-area[data-question-num="${questionPart.questionNum}"] .question-status`);
+  const count = questionPart.questions.length;
 
-  if (count === -1) {
-    statusEl.textContent = "❌ Invalid question selector";
-    statusEl.className = "error";
-    return;
+  switch (count) {
+    case -1:
+      statusElt.textContent = "❌ Invalid question selector";
+      statusElt.className = "error";
+      break;
+    case 0:
+      statusElt.textContent = "❌ No question found";
+      statusElt.className = "error";
+      break;
+    case 1:
+      statusElt.textContent = "✅ Found 1 question";
+      statusElt.className = "ok";
+      break;
+    default:
+      statusElt.textContent = `⚠ Found ${count} questions`;
+      statusElt.className = "warn";
   }
-
-  if (count === 0) {
-    statusEl.textContent = "❌ No question found";
-    statusEl.className = "error";
-    return;
-  }
-
-  if (count === 1) {
-    statusEl.textContent = "✅ Found 1 question";
-    statusEl.className = "ok";
-    return;
-  }
-
-  statusEl.textContent = `⚠ Found ${count} questions`;
-  statusEl.className = "warn";
+  
+  statusElt.className += " question-status";
 }
 
 function renderAnswersStatus(count) {
-  const statusEl = document.getElementById("answersStatus");
+  const statusEll = document.getElementById("answersStatus");
 
   if (count === -1) {
-    statusEl.textContent = "❌ Invalid answers selector";
-    statusEl.className = "error";
+    statusEll.textContent = "❌ Invalid answers selector";
+    statusEll.className = "error";
     return;
   }
 
   if (count === 0) {
-    statusEl.textContent = "❌ No elements found";
-    statusEl.className = "error";
+    statusEll.textContent = "❌ No elements found";
+    statusEll.className = "error";
     return;
   }
 
   if (count === 1) {
-    statusEl.textContent = "⚠ Found 1 element";
-    statusEl.className = "warn";
+    statusEll.textContent = "⚠ Found 1 element";
+    statusEll.className = "warn";
     return;
   }
 
-  statusEl.textContent = `✅ Found ${count} answers`;
-  statusEl.className = "ok";
+  statusEll.textContent = `✅ Found ${count} answers`;
+  statusEll.className = "ok";
 }
 
 getBtn.onclick = async () => {
   const activeTab = await getActiveTab();
-  tabId = activeTab.id;
+  const tabId = activeTab.id;
+  const questionSelectors = [...document.querySelectorAll(".selectors .question-selector")]
+    .map(qs => {return { questionNum: Number(qs.closest(".question-selector-area").dataset.questionNum), selector: qs.value.trim() };})
+    .filter(qs => qs.selector != "");
   const selectors = {
-    questionSelector: questionSelectorInput.value.trim(),
+    questionSelectors,
     answersSelector: answersSelectorInput.value.trim()
   };
   await chrome.runtime.sendMessage({
@@ -153,19 +161,24 @@ chrome.runtime.onMessage.addListener(msg => {
   }
 });
 
-function renderQuestion({ question, answers }) {
-  renderQuestionField(question);
+function renderQuestion({ questionParts, answers }) {
+  questionParts.forEach(renderQuestionStatus)
+  renderQuestionField(questionParts);
   renderAnswersFields(answers);
 }
 
-function renderQuestionField(question) {
-  questionText = questionTextInput.value.trim();
+function renderQuestionField(newQuestionParts) {
+  const prependText = questionTextInput.value.trim();
   const container = document.getElementById("question");
+  const questionParts = container.querySelector("textarea")?.questionParts ?? [];
+  const questionNumsToUpdate = newQuestionParts.map(q => q.questionNum);
+  const unchangedQuestionParts = questionParts.filter(qp => !questionNumsToUpdate.includes(qp.questionNum));
+  const updatedQuestionParts = [...newQuestionParts, ...unchangedQuestionParts].sort((a, b) => a.questionNum - b.questionNum);
   container.innerHTML = "";
-
   const textarea = document.createElement("textarea");
-  questions = [questionText, ...question];
-  textarea.value = questions.filter(q => q != null && q.trim() != "").join(" ");
+  textarea.questionParts = updatedQuestionParts;
+  const textParts = [prependText, ...updatedQuestionParts.flatMap(qp => qp.questions)];
+  textarea.value = textParts.filter(tp => tp != null && tp.trim() != "").join(" ");
   textarea.rows = 4;
   textarea.style.width = "100%";
   textarea.placeholder = "Question";
