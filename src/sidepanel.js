@@ -13,7 +13,23 @@ questionTextInput.onchange = () => {
   renderQuestionField([]);
 };
 
-pickQuestionBtns = document.querySelectorAll(".pick-question");
+const questionSelectorInputs = document.querySelectorAll(".question-selector");
+questionSelectorInputs.forEach(input => input.onchange = (e) => {
+  if (e.target.value.trim() === "") {
+    const questionNum = Number(e.target.closest(".question-selector-area").dataset.questionNum);
+    clearQuestionSelector(questionNum);
+  }
+});
+
+function clearQuestionSelector(questionNum) {
+  const statusElt = document.querySelector(`.question-selector-area[data-question-num="${questionNum}"] .question-status`);
+  statusElt.innerHTML = "";
+  statusElt.className = "question-status";
+  const questionPart = {questionNum, questions: []};
+  renderQuestionField([questionPart]);
+}
+
+const pickQuestionBtns = document.querySelectorAll(".pick-question");
 pickQuestionBtns.forEach(btn => btn.onclick = async(e) => {
   const activeTab = await getActiveTab();
   tabId = activeTab.id;
