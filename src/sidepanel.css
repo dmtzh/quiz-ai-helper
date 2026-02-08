@@ -37,9 +37,9 @@ div.selectors > div input {
 .warn { color: orange; }
 .error { color: red; }
 
-h3 {
+h3, #recommendation {
   margin-bottom: 5px;
 }
-#recommendation {
-  margin-bottom: 10px;
+#question {
+  margin-top: 10px;
 }

@@ -3,6 +3,12 @@ const answersSelectorInput = document.getElementById("answersSelector");
 const getBtn = document.getElementById("get");
 const analyzeBtn = document.getElementById("analyze");
 const pickAnswersBtn = document.getElementById("pickAnswers");
+const recommendationContainer = document.getElementById("recommendation");
+const clearRecommendationBtn = document.getElementById("clearRecommendation");
+
+clearRecommendationBtn.onclick = () => {
+  recommendationContainer.innerText = 'Click "Analyze" to start…';
+};
 
 async function getActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -157,12 +163,11 @@ function collectLLMData() {
   return {llmApiUrl, llmApiKey, llmModel};
 }
 analyzeBtn.onclick = () => {
-  
   const llmData = collectLLMData();
   questionData = collectQuestionData();
   payload = {...llmData, ...questionData};
   chrome.runtime.sendMessage({ type: "ASSISTANT_ANALYZE", payload });
-  document.getElementById("recommendation").innerHTML = "<div>Analyzing. Please wait...</div>"
+  recommendationContainer.innerText = "Analyzing. Please wait..."
 };
 
 chrome.runtime.onMessage.addListener(msg => {
@@ -274,14 +279,12 @@ function htmlEncode(str) {
 }
 
 function renderRecommendation(recommendation) {
-  const recommendationElt = document.getElementById("recommendation");
-  recommendationElt.innerHTML = `
+  recommendationContainer.innerHTML = `
     <div>${valueToString(recommendation)}</div>
   `;
 }
 // function renderRecommendation({recommended, confidence, explanation}) {
-//   const recommendation = document.getElementById("recommendation");
-//   recommendation.innerHTML = `
+//   recommendationContainer.innerHTML = `
 //     <div class="answer">
 //       ✅ Ответ: <b>${recommended}</b>
 //     </div>
@@ -298,8 +301,7 @@ function renderRecommendation(recommendation) {
 //   `;
 // }
 function renderRecommendationError(error) {
-  const recommendation = document.getElementById("recommendation");
-  recommendation.innerHTML = `
+  recommendationContainer.innerHTML = `
     <div>Упс, произошла ошибка</div>
     <div>${JSON.stringify(error)}</div>
   `;
